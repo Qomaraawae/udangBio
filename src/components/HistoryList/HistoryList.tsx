@@ -1,6 +1,15 @@
 import React from "react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 import type { HistoryItem } from "../../types/udang.types";
-import { Calendar, Clock } from "lucide-react";
+import { Clock } from "lucide-react";
 
 interface Props {
   history: HistoryItem[];
@@ -21,7 +30,7 @@ export const HistoryList: React.FC<Props> = ({ history, onItemClick }) => {
 
   if (history.length === 0) {
     return (
-      <div className="text-center py-12 text-gray-500">
+      <div className="text-center py-12 text-muted-foreground">
         <Clock className="w-12 h-12 mx-auto mb-3 opacity-50" />
         <p>Belum ada history deteksi</p>
         <p className="text-sm">Lakukan deteksi udang pertama Anda!</p>
@@ -30,37 +39,46 @@ export const HistoryList: React.FC<Props> = ({ history, onItemClick }) => {
   }
 
   return (
-    <div className="space-y-4">
-      {history.map((item) => (
-        <div
-          key={item.id}
-          onClick={() => onItemClick?.(item)}
-          className="card hover:shadow-lg transition-shadow cursor-pointer"
-        >
-          <div className="flex justify-between items-start mb-3">
-            <div>
-              <h4 className="font-semibold text-gray-900">
-                {item.hasil.nama_umum}
-              </h4>
-              <p className="text-sm text-gray-500">{item.hasil.nama_ilmiah}</p>
-            </div>
-            <div className="text-xs text-gray-400 flex items-center gap-1">
-              <Calendar className="w-3 h-3" />
-              {formatDate(item.timestamp)}
-            </div>
-          </div>
-
-          <div className="text-sm text-gray-600">
-            <p>
-              Ciri-ciri: {item.ciri.habitat === "laut" ? "Laut" : "Air Tawar"},
-              {item.ciri.ukuran_cm} cm, rostrum {item.ciri.rostrum}
-            </p>
-            <p className="text-xs text-primary-500 mt-1">
-              Confidence: {item.hasil.confidence}%
-            </p>
-          </div>
-        </div>
-      ))}
+    <div className="rounded-md border">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="w-12">No</TableHead>
+            <TableHead>Jenis Udang</TableHead>
+            <TableHead>Confidence</TableHead>
+            <TableHead className="hidden md:table-cell">
+              Waktu Deteksi
+            </TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {history.map((item, index) => (
+            <TableRow
+              key={item.id}
+              onClick={() => onItemClick?.(item)}
+              className="cursor-pointer hover:bg-muted/50 transition-colors"
+            >
+              <TableCell className="font-medium">{index + 1}</TableCell>
+              <TableCell>
+                <div>
+                  <p className="font-medium">{item.hasil.nama_umum}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {item.hasil.nama_ilmiah}
+                  </p>
+                </div>
+              </TableCell>
+              <TableCell>
+                <Badge variant="secondary" className="gap-1">
+                  {item.hasil.confidence}%
+                </Badge>
+              </TableCell>
+              <TableCell className="hidden md:table-cell text-muted-foreground">
+                {formatDate(item.timestamp)}
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </div>
   );
 };
