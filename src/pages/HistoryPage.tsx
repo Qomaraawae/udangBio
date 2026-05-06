@@ -1,16 +1,37 @@
-import React from "react";
+import React, { useState } from "react";
 import { HistoryList } from "../components/HistoryList/HistoryList";
 import { LoadingSpinner } from "../components/Common/LoadingSpinner";
 import { ErrorAlert } from "../components/Common/ErrorAlert";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useHistory } from "../hooks/useHistory";
-import { History, Download, RefreshCw, ClipboardList } from "lucide-react";
+import {
+  History,
+  Download,
+  RefreshCw,
+  ClipboardList,
+  X,
+  Award,
+  Ruler,
+  MapPin,
+  Palette,
+  Calendar,
+  Clock,
+} from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import type { HistoryItem } from "../types/udang.types";
 
 export const HistoryPage: React.FC = () => {
   const { history, loading, error, refresh } = useHistory();
+  const [selectedItem, setSelectedItem] = useState<HistoryItem | null>(null);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
 
   const exportToPDF = () => {
     if (history.length === 0) {
@@ -62,6 +83,28 @@ export const HistoryPage: React.FC = () => {
     doc.save(
       `riwayat-deteksi-udang-${new Date().toISOString().slice(0, 19)}.pdf`,
     );
+  };
+
+  const handleItemClick = (item: HistoryItem) => {
+    setSelectedItem(item);
+    setIsDetailOpen(true);
+  };
+
+  const formatDate = (timestamp: string) => {
+    return new Date(timestamp).toLocaleDateString("id-ID", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  const getConfidenceColor = (confidence: number) => {
+    if (confidence >= 80) return "text-green-600 bg-green-50 border-green-200";
+    if (confidence >= 60)
+      return "text-yellow-600 bg-yellow-50 border-yellow-200";
+    return "text-red-600 bg-red-50 border-red-200";
   };
 
   return (
@@ -153,12 +196,174 @@ export const HistoryPage: React.FC = () => {
               )}
 
               {!loading && !error && history.length > 0 && (
-                <HistoryList history={history} />
+                <HistoryList history={history} onItemClick={handleItemClick} />
               )}
             </div>
           </div>
         </div>
       </div>
+
+      {/* ── Modal Detail ── */}
+      <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          {selectedItem && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex items-center justify-between">
+                  <span className="flex items-center gap-2">
+                    Detail Identifikasi
+                  </span>
+                </DialogTitle>
+              </DialogHeader>
+
+              <div className="space-y-6">
+                {/* Hasil Deteksi */}
+                <div className="bg-gradient-to-r from-blue-50 to-white rounded-xl p-5 border border-blue-100">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h3 className="text-xl font-bold text-gray-900">
+                        {selectedItem.hasil.nama_umum}
+                      </h3>
+                      <p className="text-sm text-gray-500 italic mt-0.5">
+                        {selectedItem.hasil.nama_ilmiah}
+                      </p>
+                    </div>
+                    <Badge
+                      className={getConfidenceColor(
+                        selectedItem.hasil.confidence,
+                      )}
+                    >
+                      <Award className="w-3 h-3 mr-1" />
+                      {selectedItem.hasil.confidence}% Confidence
+                    </Badge>
+                  </div>
+                </div>
+
+                {/* Detail Ciri-ciri yang diinput */}
+                <div className="space-y-3">
+                  <h4 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                    <div className="w-1 h-4 bg-blue-500 rounded-full" />
+                    Ciri-ciri yang Diinput
+                  </h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-gray-50 rounded-lg p-3">
+                      <div className="flex items-center gap-2 text-gray-500 text-xs mb-1">
+                        <MapPin className="w-3 h-3" />
+                        Habitat
+                      </div>
+                      <p className="font-medium text-gray-800">
+                        {selectedItem.ciri.habitat === "laut"
+                          ? "Laut"
+                          : "Air Tawar"}
+                      </p>
+                    </div>
+                    <div className="bg-gray-50 rounded-lg p-3">
+                      <div className="flex items-center gap-2 text-gray-500 text-xs mb-1">
+                        <Palette className="w-3 h-3" />
+                        Warna
+                      </div>
+                      <p className="font-medium text-gray-800">
+                        {selectedItem.ciri.warna || "-"}
+                      </p>
+                    </div>
+                    <div className="bg-gray-50 rounded-lg p-3">
+                      <div className="flex items-center gap-2 text-gray-500 text-xs mb-1">
+                        <Ruler className="w-3 h-3" />
+                        Ukuran
+                      </div>
+                      <p className="font-medium text-gray-800">
+                        {selectedItem.ciri.ukuran_cm} cm
+                      </p>
+                    </div>
+                    <div className="bg-gray-50 rounded-lg p-3">
+                      <div className="flex items-center gap-2 text-gray-500 text-xs mb-1">
+                        🦐 Rostrum
+                      </div>
+                      <p className="font-medium text-gray-800">
+                        {selectedItem.ciri.rostrum === "bergerigi" &&
+                          "Bergerigi"}
+                        {selectedItem.ciri.rostrum === "halus" && "✨ Halus"}
+                        {selectedItem.ciri.rostrum === "tidak_ada" &&
+                          "❌ Tidak Ada"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Detail Udang */}
+                <div className="space-y-3">
+                  <h4 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                    <div className="w-1 h-4 bg-blue-500 rounded-full" />
+                    Informasi Udang
+                  </h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-blue-50/50 rounded-lg p-3">
+                      <p className="text-xs text-gray-500 mb-1">Habitat Asli</p>
+                      <p className="font-medium text-gray-800">
+                        {selectedItem.hasil.habitat === "laut"
+                          ? "🌊 Laut"
+                          : "💧 Air Tawar"}
+                      </p>
+                    </div>
+                    <div className="bg-blue-50/50 rounded-lg p-3">
+                      <p className="text-xs text-gray-500 mb-1">Ukuran Khas</p>
+                      <p className="font-medium text-gray-800">
+                        {selectedItem.hasil.ukuran_min} -{" "}
+                        {selectedItem.hasil.ukuran_max} cm
+                      </p>
+                    </div>
+                    <div className="bg-blue-50/50 rounded-lg p-3">
+                      <p className="text-xs text-gray-500 mb-1">Warna Khas</p>
+                      <p className="font-medium text-gray-800">
+                        {selectedItem.hasil.warna}
+                      </p>
+                    </div>
+                    <div className="bg-blue-50/50 rounded-lg p-3">
+                      <p className="text-xs text-gray-500 mb-1">
+                        Bentuk Rostrum
+                      </p>
+                      <p className="font-medium text-gray-800">
+                        {selectedItem.hasil.rostrum === "bergerigi" &&
+                          "Bergerigi"}
+                        {selectedItem.hasil.rostrum === "halus" && "✨ Halus"}
+                        {selectedItem.hasil.rostrum === "tidak_ada" &&
+                          "❌ Tidak Ada"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Deskripsi */}
+                {selectedItem.hasil.deskripsi && (
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                      <div className="w-1 h-4 bg-blue-500 rounded-full" />
+                      Deskripsi
+                    </h4>
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <p className="text-sm text-gray-600 leading-relaxed">
+                        {selectedItem.hasil.deskripsi}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Waktu Deteksi */}
+                <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                  <div className="flex items-center gap-2 text-gray-400 text-xs">
+                    <Calendar className="w-3 h-3" />
+                    <span>ID: {selectedItem.id}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-gray-400 text-xs">
+                    <Clock className="w-3 h-3" />
+                    <span>{formatDate(selectedItem.timestamp)}</span>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
