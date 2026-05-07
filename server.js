@@ -4,7 +4,7 @@ import cors from 'cors';
 const app = express();
 const PORT = 5001;
 
-// CORS 
+// CORS
 app.use(cors());
 app.use(express.json());
 
@@ -36,7 +36,7 @@ const dataUdang = [
     ukuran_max: 23,
     rostrum: 'bergerigi',
     deskripsi: 'Udang introduksi dari Amerika Latin, dominan di tambak Indonesia',
-    gambar_url: 'https://images.unsplash.com/photo-1565680018434-b5131a9e99b2?w=400'
+    gambar_url: 'https://placehold.co/400x300?text=Udang+Vannamei'
   },
   {
     id: 2,
@@ -48,7 +48,7 @@ const dataUdang = [
     ukuran_max: 35,
     rostrum: 'bergerigi',
     deskripsi: 'Udang asli Asia Tenggara, ukuran besar dengan ciri khas belang',
-    gambar_url: 'https://images.unsplash.com/photo-1575444758702-4a6b9222336e?w=400'
+    gambar_url: 'https://placehold.co/400x300?text=Udang+Windu'
   },
   {
     id: 3,
@@ -60,7 +60,7 @@ const dataUdang = [
     ukuran_max: 40,
     rostrum: 'bergerigi',
     deskripsi: 'Udang air tawar terbesar, capit panjang berwarna biru',
-    gambar_url: 'https://images.unsplash.com/photo-1551029506-0808e961106a?w=400'
+    gambar_url: 'https://placehold.co/400x300?text=Udang+Galah'
   },
   {
     id: 4,
@@ -72,7 +72,7 @@ const dataUdang = [
     ukuran_max: 15,
     rostrum: 'bergerigi',
     deskripsi: 'Udang laut dingin, warna merah muda khas',
-    gambar_url: 'https://images.unsplash.com/photo-1551029506-0808e961106a?w=400'
+    gambar_url: 'https://placehold.co/400x300?text=Udang+Utara'
   },
   {
     id: 5,
@@ -84,7 +84,7 @@ const dataUdang = [
     ukuran_max: 5,
     rostrum: 'bergerigi',
     deskripsi: 'Udang hias populer untuk aquarium, pemakan algae',
-    gambar_url: 'https://images.unsplash.com/photo-1551029506-0808e961106a?w=400'
+    gambar_url: 'https://placehold.co/400x300?text=Udang+Amano'
   }
 ];
 

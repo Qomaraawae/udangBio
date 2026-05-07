@@ -1,0 +1,40 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model JenisUdang {
+  id          Int     @id @default(autoincrement())
+  namaIlmiah  String  @map("nama_ilmiah")
+  namaUmum    String  @map("nama_umum")
+  habitat     String
+  warna       String
+  ukuranMin   Int     @map("ukuran_min")
+  ukuranMax   Int     @map("ukuran_max")
+  rostrum     String
+  deskripsi   String
+  gambarUrl   String? @map("gambar_url")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  history     History[]
+
+  @@map("jenis_udang")
+}
+
+model History {
+  id          Int      @id @default(autoincrement())
+  timestamp   DateTime @default(now())
+  habitat     String
+  warna       String?
+  ukuranCm    Int      @map("ukuran_cm")
+  rostrum     String
+  hasilId     Int      @map("hasil_id")
+  hasil       JenisUdang @relation(fields: [hasilId], references: [id])
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("history")
+}
