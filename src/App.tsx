@@ -13,8 +13,8 @@ function App() {
         <Navbar />
         <Routes>
           <Route path="/" element={<HomePage />} />
-          <Route path="/history" element={<HistoryPage />} />
-          <Route path="/tentang" element={<TentangPage />} />
+          <Route path="/History" element={<HistoryPage />} />
+          <Route path="/About" element={<TentangPage />} />
         </Routes>
       </Router>
     </UdangProvider>

@@ -11,7 +11,7 @@ export const Navbar: React.FC = () => {
   const navItems = [
     { path: "/", label: "Deteksi Udang" },
     { path: "/History", label: "History" },
-    { path: "/About", label: "About" },
+    { path: "/About", label: "Tentang" },
   ];
 
   // Shadow saat scroll
