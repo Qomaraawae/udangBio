@@ -4,7 +4,6 @@ import cors from 'cors';
 const app = express();
 const PORT = 5001;
 
-// CORS
 app.use(cors());
 app.use(express.json());
 
