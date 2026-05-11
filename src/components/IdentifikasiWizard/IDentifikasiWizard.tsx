@@ -3,6 +3,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { KamusVisual } from "../KamusVisual/KamusVisual";
+import { BookOpen } from "lucide-react";
 import type { CiriUdang, Habitat, Rostrum } from "../../types/udang.types";
 
 interface Props {
@@ -17,6 +26,7 @@ export const IdentifikasiWizard: React.FC<Props> = ({
   isLoading,
 }) => {
   const [currentStep, setCurrentStep] = useState<Step>(1);
+  const [isKamusOpen, setIsKamusOpen] = useState(false);
   const [formData, setFormData] = useState<CiriUdang>({
     habitat: "laut",
     warna: "",
@@ -39,20 +49,6 @@ export const IdentifikasiWizard: React.FC<Props> = ({
   const handleBack = () => {
     if (currentStep > 1) {
       setCurrentStep((prev) => (prev - 1) as Step);
-    }
-  };
-
-  // ✅ Handler input manual ukuran
-  const handleUkuranInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const raw = e.target.value;
-    if (raw === "") {
-      updateFormData("ukuran_cm", 0);
-      return;
-    }
-    const parsed = parseInt(raw, 10);
-    if (!isNaN(parsed)) {
-      const clamped = Math.min(50, Math.max(0, parsed));
-      updateFormData("ukuran_cm", clamped);
     }
   };
 
@@ -87,17 +83,17 @@ export const IdentifikasiWizard: React.FC<Props> = ({
     {
       value: "bergerigi",
       label: "🔪 Bergerigi (Bergigi)",
-      description: "Moncong bergerigi seperti gergaji",
+      description: "Moncong bergerigi seperti gergaji - ciri khas udang laut",
     },
     {
       value: "halus",
       label: "✨ Halus (Tidak Bergigi)",
-      description: "Moncong halus tanpa gerigi",
+      description: "Moncong halus tanpa gerigi - umum pada udang air tawar",
     },
     {
       value: "tidak_ada",
       label: "❌ Tidak Ada Rostrum",
-      description: "Tidak memiliki moncong",
+      description: "Tidak memiliki moncong - sangat jarang",
     },
   ];
 
@@ -105,6 +101,17 @@ export const IdentifikasiWizard: React.FC<Props> = ({
 
   return (
     <div className="space-y-6">
+      {/* Header dengan tombol kamus visual */}
+      <div className="flex justify-between items-center">
+        <div className="flex items-center gap-2">
+          <div className="w-1 h-6 bg-blue-500 rounded-full" />
+          <h2 className="font-semibold text-gray-700">
+            Langkah {currentStep} dari 4
+          </h2>
+        </div>
+        <KamusVisual open={isKamusOpen} onOpenChange={setIsKamusOpen} />
+      </div>
+
       {/* Progress Bar */}
       <div className="space-y-2">
         <div className="flex justify-between text-xs text-gray-500">
@@ -148,6 +155,11 @@ export const IdentifikasiWizard: React.FC<Props> = ({
               </h2>
               <p className="text-gray-500 mt-2">
                 Pilih habitat tempat udang ditemukan
+              </p>
+              <p className="text-xs text-gray-400 mt-1">
+                💡 Tidak yakin? Klik tombol{" "}
+                <BookOpen className="w-3 h-3 inline" /> Kamus Visual di pojok
+                kanan atas
               </p>
             </div>
             <div className="grid grid-cols-2 gap-4 pt-4">
@@ -232,50 +244,29 @@ export const IdentifikasiWizard: React.FC<Props> = ({
                 Perkirakan panjang udang dalam cm
               </p>
             </div>
-            <div className="pt-4 px-4">
-              {/* ✅ Input manual ukuran */}
-              <div className="flex items-center justify-center mb-6">
-                <div className="flex items-center gap-2 border-2 border-blue-300 rounded-xl px-4 py-2 bg-blue-50 focus-within:border-blue-500 transition-colors">
-                  <input
-                    type="number"
-                    min={0}
-                    max={50}
-                    value={formData.ukuran_cm}
-                    onChange={handleUkuranInput}
-                    className="w-20 text-3xl font-bold text-blue-600 text-center bg-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                  />
-                  <span className="text-xl font-semibold text-blue-400">
-                    cm
-                  </span>
-                </div>
-              </div>
-
+            <div className="pt-8 px-4">
               <div className="flex justify-between items-center mb-4">
-                <span className="text-sm text-gray-500">Kecil</span>
-                <span className="text-sm text-gray-500">Besar</span>
+                <span className="text-sm text-gray-500">Kecil (0-10cm)</span>
+                <span className="text-2xl font-bold text-blue-600">
+                  {formData.ukuran_cm} cm
+                </span>
+                <span className="text-sm text-gray-500">Besar (40-50cm)</span>
               </div>
-
-              {/* Slider dengan border */}
-              <div className="border-2 border-gray-200 rounded-xl px-4 py-5 bg-gray-50 focus-within:border-blue-400 transition-colors">
-                <Slider
-                  min={0}
-                  max={50}
-                  step={1}
-                  value={[formData.ukuran_cm]}
-                  onValueChange={(value) =>
-                    updateFormData("ukuran_cm", value[0])
-                  }
-                  className="w-full"
-                />
-              </div>
-
+              <Slider
+                min={0}
+                max={50}
+                step={1}
+                value={[formData.ukuran_cm]}
+                onValueChange={(value) => updateFormData("ukuran_cm", value[0])}
+                className="w-full"
+              />
               <div className="flex justify-between text-xs text-gray-400 mt-2">
-                <span>0 cm</span>
-                <span>10 cm</span>
-                <span>20 cm</span>
-                <span>30 cm</span>
-                <span>40 cm</span>
-                <span>50 cm</span>
+                <span>0</span>
+                <span>10</span>
+                <span>20</span>
+                <span>30</span>
+                <span>40</span>
+                <span>50</span>
               </div>
             </div>
           </div>
@@ -291,6 +282,13 @@ export const IdentifikasiWizard: React.FC<Props> = ({
               <p className="text-gray-500 mt-2">
                 Rostrum adalah moncong/tajak di kepala udang
               </p>
+              <button
+                type="button"
+                onClick={() => setIsKamusOpen(true)}
+                className="text-xs text-blue-500 hover:underline mt-1"
+              >
+                ❓ Tidak tahu apa itu rostrum? Lihat di kamus visual
+              </button>
             </div>
             <div className="space-y-3 pt-4">
               {rostrumOptions.map((opt) => (

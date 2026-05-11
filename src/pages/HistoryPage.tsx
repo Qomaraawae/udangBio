@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { HistoryList } from "../components/HistoryList/HistoryList";
 import { LoadingSpinner } from "../components/Common/LoadingSpinner";
 import { ErrorAlert } from "../components/Common/ErrorAlert";
@@ -10,27 +10,63 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useHistory } from "../hooks/useHistory";
 import {
   History,
   Download,
   RefreshCw,
   ClipboardList,
+  X,
   Award,
   Ruler,
   MapPin,
   Palette,
   Calendar,
   Clock,
+  ArrowUpDown,
 } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import type { HistoryItem } from "../types/udang.types";
 
+type SortType = "terbaru" | "terlama" | "tertinggi" | "terendah";
+
 export const HistoryPage: React.FC = () => {
   const { history, loading, error, refresh } = useHistory();
   const [selectedItem, setSelectedItem] = useState<HistoryItem | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [sortBy, setSortBy] = useState<SortType>("terbaru");
+
+  // Fungsi sorting history
+  const sortedHistory = useMemo(() => {
+    const data = [...history];
+
+    switch (sortBy) {
+      case "terbaru":
+        return data.sort(
+          (a, b) =>
+            new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
+        );
+      case "terlama":
+        return data.sort(
+          (a, b) =>
+            new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
+        );
+      case "tertinggi":
+        return data.sort((a, b) => b.hasil.confidence - a.hasil.confidence);
+      case "terendah":
+        return data.sort((a, b) => a.hasil.confidence - b.hasil.confidence);
+      default:
+        return data;
+    }
+  }, [history, sortBy]);
 
   const exportToPDF = () => {
     if (history.length === 0) {
@@ -39,222 +75,49 @@ export const HistoryPage: React.FC = () => {
     }
 
     const doc = new jsPDF();
-    const pageWidth = doc.internal.pageSize.width;
-    const pageHeight = doc.internal.pageSize.height;
-    const margin = 20;
-    const contentWidth = pageWidth - margin * 2;
+    doc.setFontSize(18);
+    doc.setTextColor(33, 33, 33);
+    doc.text("Riwayat Deteksi Udang", 14, 20);
+    doc.setFontSize(11);
+    doc.setTextColor(100, 100, 100);
+    doc.text(
+      `Tanggal export: ${new Date().toLocaleDateString("id-ID")}`,
+      14,
+      30,
+    );
+    doc.line(14, 35, 200, 35);
 
-    const formatDateTime = (timestamp: string) =>
-      new Date(timestamp).toLocaleDateString("id-ID", {
+    const tableData = sortedHistory.map((item, index) => [
+      index + 1,
+      item.hasil.nama_umum,
+      item.hasil.nama_ilmiah,
+      `${item.hasil.confidence}%`,
+      new Date(item.timestamp).toLocaleDateString("id-ID", {
         day: "numeric",
         month: "long",
         year: "numeric",
         hour: "2-digit",
         minute: "2-digit",
-      });
+      }),
+    ]);
 
-    // HEADER
-    // Background strip biru
-    doc.setFillColor(37, 99, 235);
-    doc.rect(0, 0, pageWidth, 38, "F");
-
-    doc.setFontSize(16);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(255, 255, 255);
-    doc.text("LAPORAN RIWAYAT DETEKSI UDANG", pageWidth / 2, 16, {
-      align: "center",
+    autoTable(doc, {
+      startY: 40,
+      head: [["No", "Nama Umum", "Nama Ilmiah", "Confidence", "Waktu Deteksi"]],
+      body: tableData,
+      theme: "striped",
+      headStyles: {
+        fillColor: [37, 99, 235],
+        textColor: [255, 255, 255],
+        fontStyle: "bold",
+      },
+      alternateRowStyles: { fillColor: [239, 246, 255] },
+      margin: { left: 14, right: 14 },
     });
 
-    doc.setFontSize(9);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(200, 220, 255);
-    doc.text(
-      `Tanggal: ${new Date().toLocaleDateString("id-ID")}   |   Total: ${history.length} identifikasi`,
-      pageWidth / 2,
-      27,
-      { align: "center" },
+    doc.save(
+      `riwayat-deteksi-udang-${new Date().toISOString().slice(0, 19)}.pdf`,
     );
-
-    let y = 52;
-
-    // ── LOOP DATA ────────────────────────────────────────
-    for (let i = 0; i < history.length; i++) {
-      const item = history[i];
-
-      // Estimasi tinggi card
-      const descLines = item.hasil.deskripsi
-        ? doc.splitTextToSize(item.hasil.deskripsi, contentWidth - 20).length
-        : 0;
-      const estimatedHeight = 88 + descLines * 5;
-
-      // New page jika tidak cukup
-      if (y + estimatedHeight > pageHeight - 25) {
-        doc.addPage();
-        y = 20;
-      }
-
-      // Card background
-      doc.setFillColor(248, 250, 252);
-      doc.setDrawColor(226, 232, 240);
-      doc.setLineWidth(0.3);
-      doc.roundedRect(margin, y, contentWidth, estimatedHeight, 3, 3, "FD");
-
-      // Stripe biru kiri
-      doc.setFillColor(37, 99, 235);
-      doc.rect(margin, y, 4, estimatedHeight, "F");
-
-      let iy = y + 10;
-
-      // Nomor + Nama
-      doc.setFontSize(11);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(37, 99, 235);
-      doc.text(`#${i + 1}  ${item.hasil.nama_umum}`, margin + 10, iy);
-
-      // Nama ilmiah
-      doc.setFontSize(8.5);
-      doc.setFont("helvetica", "italic");
-      doc.setTextColor(120, 120, 120);
-      doc.text(item.hasil.nama_ilmiah, margin + 10, iy + 6);
-
-      // Confidence badge (kanan)
-      const conf = item.hasil.confidence;
-      const badgeColor =
-        conf >= 80 ? [22, 163, 74] : conf >= 60 ? [217, 119, 6] : [220, 38, 38];
-      doc.setFillColor(badgeColor[0], badgeColor[1], badgeColor[2]);
-      doc.roundedRect(pageWidth - margin - 38, y + 7, 38, 10, 2, 2, "F");
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(8);
-      doc.setTextColor(255, 255, 255);
-      doc.text(`${conf}% Confidence`, pageWidth - margin - 19, y + 13.5, {
-        align: "center",
-      });
-
-      iy += 16;
-
-      // Garis pemisah tipis
-      doc.setDrawColor(226, 232, 240);
-      doc.setLineWidth(0.2);
-      doc.line(margin + 10, iy, pageWidth - margin - 5, iy);
-      iy += 6;
-
-      // ── DUA KOLOM: Ciri Input | Hasil Deteksi ──
-      const col1X = margin + 10;
-      const col2X = margin + contentWidth / 2 + 5;
-
-      // Label kolom
-      doc.setFontSize(8);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(37, 99, 235);
-      doc.text("Ciri-ciri Diinput", col1X, iy);
-      doc.text("Hasil Deteksi", col2X, iy);
-      iy += 5;
-
-      doc.setFont("helvetica", "normal");
-      doc.setTextColor(60, 60, 60);
-      doc.setFontSize(8);
-
-      const rostrumLabel = (r: string) =>
-        r === "bergerigi" ? "Bergerigi" : r === "halus" ? "Halus" : "Tidak Ada";
-      const habitatLabel = (h: string) => (h === "laut" ? "Laut" : "Air Tawar");
-
-      // Kolom kiri
-      const ciriRows = [
-        ["Habitat", habitatLabel(item.ciri.habitat)],
-        ["Warna", item.ciri.warna || "-"],
-        ["Ukuran", `${item.ciri.ukuran_cm} cm`],
-        ["Rostrum", rostrumLabel(item.ciri.rostrum)],
-      ];
-
-      // Kolom kanan
-      const hasilRows = [
-        ["Habitat Asli", habitatLabel(item.hasil.habitat)],
-        ["Warna Khas", item.hasil.warna],
-        [
-          "Ukuran Khas",
-          `${item.hasil.ukuran_min} - ${item.hasil.ukuran_max} cm`,
-        ],
-        ["Rostrum", rostrumLabel(item.hasil.rostrum)],
-      ];
-
-      const rowStartY = iy;
-      ciriRows.forEach(([label, val], idx) => {
-        const rowY = rowStartY + idx * 6;
-        doc.setTextColor(120, 120, 120);
-        doc.text(`${label}`, col1X, rowY);
-        doc.setTextColor(40, 40, 40);
-        doc.text(`: ${val}`, col1X + 22, rowY);
-      });
-
-      hasilRows.forEach(([label, val], idx) => {
-        const rowY = rowStartY + idx * 6;
-        doc.setTextColor(120, 120, 120);
-        doc.text(`${label}`, col2X, rowY);
-        doc.setTextColor(40, 40, 40);
-        doc.text(`: ${val}`, col2X + 26, rowY);
-      });
-
-      iy = rowStartY + ciriRows.length * 6 + 6;
-
-      // ── Deskripsi ──
-      if (item.hasil.deskripsi) {
-        doc.setDrawColor(226, 232, 240);
-        doc.line(margin + 10, iy, pageWidth - margin - 5, iy);
-        iy += 5;
-
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(8);
-        doc.setTextColor(80, 80, 80);
-        doc.text("Deskripsi", col1X, iy);
-        iy += 4;
-
-        doc.setFont("helvetica", "normal");
-        doc.setTextColor(80, 80, 80);
-        const lines = doc.splitTextToSize(
-          item.hasil.deskripsi,
-          contentWidth - 20,
-        );
-        lines.forEach((line: string) => {
-          doc.text(line, col1X, iy);
-          iy += 5;
-        });
-        iy += 2;
-      }
-
-      // ── Waktu ──
-      doc.setDrawColor(226, 232, 240);
-      doc.line(margin + 10, iy, pageWidth - margin - 5, iy);
-      iy += 5;
-      doc.setFont("helvetica", "italic");
-      doc.setFontSize(7.5);
-      doc.setTextColor(150, 150, 150);
-      doc.text(`Waktu deteksi: ${formatDateTime(item.timestamp)}`, col1X, iy);
-
-      y = y + estimatedHeight + 8;
-    }
-
-    // ── FOOTER ──────────────────────────────────────────
-    const totalPages = doc.getNumberOfPages();
-    for (let i = 1; i <= totalPages; i++) {
-      doc.setPage(i);
-      doc.setFillColor(248, 250, 252);
-      doc.rect(0, pageHeight - 12, pageWidth, 12, "F");
-      doc.setFontSize(7.5);
-      doc.setFont("helvetica", "normal");
-      doc.setTextColor(150, 150, 150);
-      doc.text(
-        `Halaman ${i} dari ${totalPages}  |  Sistem Pakar Identifikasi Udang`,
-        pageWidth / 2,
-        pageHeight - 4,
-        { align: "center" },
-      );
-    }
-
-    const fileName = `laporan-deteksi-udang-${new Date()
-      .toISOString()
-      .slice(0, 19)
-      .replace(/:/g, "-")}.pdf`;
-    doc.save(fileName);
   };
 
   const handleItemClick = (item: HistoryItem) => {
@@ -262,14 +125,15 @@ export const HistoryPage: React.FC = () => {
     setIsDetailOpen(true);
   };
 
-  const formatDate = (timestamp: string) =>
-    new Date(timestamp).toLocaleDateString("id-ID", {
+  const formatDate = (timestamp: string) => {
+    return new Date(timestamp).toLocaleDateString("id-ID", {
       day: "numeric",
       month: "long",
       year: "numeric",
       hour: "2-digit",
       minute: "2-digit",
     });
+  };
 
   const getConfidenceColor = (confidence: number) => {
     if (confidence >= 80) return "text-green-600 bg-green-50 border-green-200";
@@ -278,13 +142,24 @@ export const HistoryPage: React.FC = () => {
     return "text-red-600 bg-red-50 border-red-200";
   };
 
+  // Hitung statistik
+  const totalDeteksi = history.length;
+  const rataRataConfidence =
+    history.length > 0
+      ? Math.round(
+          history.reduce((sum, item) => sum + item.hasil.confidence, 0) /
+            history.length,
+        )
+      : 0;
+
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Decorative top strip */}
       <div className="h-1 w-full bg-gradient-to-r from-blue-400 via-blue-600 to-blue-400" />
 
       <div className="container mx-auto px-4 py-14">
         <div className="max-w-6xl mx-auto space-y-10">
-          {/* Header */}
+          {/* Page Header */}
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6">
             <div className="space-y-2">
               <div className="flex items-center gap-3">
@@ -331,7 +206,59 @@ export const HistoryPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Divider */}
+          {/* Statistik Cards */}
+          {history.length > 0 && (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
+                <p className="text-xs text-gray-400">Total Deteksi</p>
+                <p className="text-2xl font-bold text-gray-800">
+                  {totalDeteksi}
+                </p>
+              </div>
+              <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
+                <p className="text-xs text-gray-400">Rata-rata Confidence</p>
+                <p className="text-2xl font-bold text-green-600">
+                  {rataRataConfidence}%
+                </p>
+              </div>
+              <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
+                <p className="text-xs text-gray-400">Tertinggi</p>
+                <p className="text-2xl font-bold text-blue-600">
+                  {Math.max(...history.map((i) => i.hasil.confidence))}%
+                </p>
+              </div>
+              <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
+                <p className="text-xs text-gray-400">Terendah</p>
+                <p className="text-2xl font-bold text-orange-600">
+                  {Math.min(...history.map((i) => i.hasil.confidence))}%
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Sorting Options */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <ArrowUpDown className="w-4 h-4 text-gray-500" />
+              <span className="text-sm text-gray-600">Urutkan:</span>
+            </div>
+            <Select
+              value={sortBy}
+              onValueChange={(value) => setSortBy(value as SortType)}
+            >
+              <SelectTrigger className="w-[200px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="terbaru">📅 Terbaru</SelectItem>
+                <SelectItem value="terlama">📅 Terlama</SelectItem>
+                <SelectItem value="tertinggi">🏆 Akurasi Tertinggi</SelectItem>
+                <SelectItem value="terendah">📉 Akurasi Terendah</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Divider with label */}
           <div className="flex items-center gap-4">
             <div className="flex-1 h-px bg-gray-200" />
             <span className="text-xs font-medium text-gray-400 tracking-widest uppercase px-2">
@@ -343,9 +270,11 @@ export const HistoryPage: React.FC = () => {
           {/* Content Card */}
           <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
             <div className="h-1 w-full bg-gradient-to-r from-blue-600 to-blue-400" />
+
             <div className="p-8">
               {loading && <LoadingSpinner />}
               {error && <ErrorAlert message={error} />}
+
               {!loading && !error && history.length === 0 && (
                 <div className="flex flex-col items-center justify-center py-24 gap-4">
                   <div className="relative flex items-center justify-center w-20 h-20 rounded-full border-2 border-dashed border-gray-200 bg-gray-50">
@@ -362,8 +291,12 @@ export const HistoryPage: React.FC = () => {
                   </div>
                 </div>
               )}
+
               {!loading && !error && history.length > 0 && (
-                <HistoryList history={history} onItemClick={handleItemClick} />
+                <HistoryList
+                  history={sortedHistory}
+                  onItemClick={handleItemClick}
+                />
               )}
             </div>
           </div>
@@ -376,8 +309,14 @@ export const HistoryPage: React.FC = () => {
           {selectedItem && (
             <>
               <DialogHeader>
-                <DialogTitle>Detail Identifikasi</DialogTitle>
+                <DialogTitle className="flex items-center justify-between">
+                  <span className="flex items-center gap-2">
+                    <span className="text-2xl"></span>
+                    Detail Identifikasi
+                  </span>
+                </DialogTitle>
               </DialogHeader>
+
               <div className="space-y-6">
                 {/* Hasil Deteksi */}
                 <div className="bg-gradient-to-r from-blue-50 to-white rounded-xl p-5 border border-blue-100">
@@ -401,7 +340,7 @@ export const HistoryPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Ciri-ciri */}
+                {/* Detail Ciri-ciri yang diinput */}
                 <div className="space-y-3">
                   <h4 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
                     <div className="w-1 h-4 bg-blue-500 rounded-full" />
@@ -410,7 +349,8 @@ export const HistoryPage: React.FC = () => {
                   <div className="grid grid-cols-2 gap-3">
                     <div className="bg-gray-50 rounded-lg p-3">
                       <div className="flex items-center gap-2 text-gray-500 text-xs mb-1">
-                        <MapPin className="w-3 h-3" /> Habitat
+                        <MapPin className="w-3 h-3" />
+                        Habitat
                       </div>
                       <p className="font-medium text-gray-800">
                         {selectedItem.ciri.habitat === "laut"
@@ -420,7 +360,8 @@ export const HistoryPage: React.FC = () => {
                     </div>
                     <div className="bg-gray-50 rounded-lg p-3">
                       <div className="flex items-center gap-2 text-gray-500 text-xs mb-1">
-                        <Palette className="w-3 h-3" /> Warna
+                        <Palette className="w-3 h-3" />
+                        Warna
                       </div>
                       <p className="font-medium text-gray-800">
                         {selectedItem.ciri.warna || "-"}
@@ -428,7 +369,8 @@ export const HistoryPage: React.FC = () => {
                     </div>
                     <div className="bg-gray-50 rounded-lg p-3">
                       <div className="flex items-center gap-2 text-gray-500 text-xs mb-1">
-                        <Ruler className="w-3 h-3" /> Ukuran
+                        <Ruler className="w-3 h-3" />
+                        Ukuran
                       </div>
                       <p className="font-medium text-gray-800">
                         {selectedItem.ciri.ukuran_cm} cm
@@ -440,16 +382,16 @@ export const HistoryPage: React.FC = () => {
                       </div>
                       <p className="font-medium text-gray-800">
                         {selectedItem.ciri.rostrum === "bergerigi" &&
-                          "Bergerigi"}
-                        {selectedItem.ciri.rostrum === "halus" && "Halus"}
+                          "🔪 Bergerigi"}
+                        {selectedItem.ciri.rostrum === "halus" && "✨ Halus"}
                         {selectedItem.ciri.rostrum === "tidak_ada" &&
-                          "Tidak Ada"}
+                          "❌ Tidak Ada"}
                       </p>
                     </div>
                   </div>
                 </div>
 
-                {/* Informasi Udang */}
+                {/* Detail Udang */}
                 <div className="space-y-3">
                   <h4 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
                     <div className="w-1 h-4 bg-blue-500 rounded-full" />
@@ -483,10 +425,10 @@ export const HistoryPage: React.FC = () => {
                       </p>
                       <p className="font-medium text-gray-800">
                         {selectedItem.hasil.rostrum === "bergerigi" &&
-                          "Bergerigi"}
-                        {selectedItem.hasil.rostrum === "halus" && "Halus"}
+                          "🔪 Bergerigi"}
+                        {selectedItem.hasil.rostrum === "halus" && "✨ Halus"}
                         {selectedItem.hasil.rostrum === "tidak_ada" &&
-                          "Tidak Ada"}
+                          "❌ Tidak Ada"}
                       </p>
                     </div>
                   </div>
@@ -507,7 +449,7 @@ export const HistoryPage: React.FC = () => {
                   </div>
                 )}
 
-                {/* Footer */}
+                {/* Waktu Deteksi */}
                 <div className="flex items-center justify-between pt-4 border-t border-gray-100">
                   <div className="flex items-center gap-2 text-gray-400 text-xs">
                     <Calendar className="w-3 h-3" />
