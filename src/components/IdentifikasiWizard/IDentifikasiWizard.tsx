@@ -101,7 +101,6 @@ export const IdentifikasiWizard: React.FC<Props> = ({
 
   return (
     <div className="space-y-6">
-      {/* Header dengan tombol kamus visual */}
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-2">
           <div className="w-1 h-6 bg-blue-500 rounded-full" />
@@ -146,7 +145,6 @@ export const IdentifikasiWizard: React.FC<Props> = ({
 
       {/* Step Content */}
       <div className="min-h-[400px] bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
-        {/* STEP 1: HABITAT */}
         {currentStep === 1 && (
           <div className="space-y-6">
             <div className="text-center">
@@ -185,7 +183,7 @@ export const IdentifikasiWizard: React.FC<Props> = ({
           </div>
         )}
 
-        {/* STEP 2: WARNA */}
+        {/* WARNA */}
         {currentStep === 2 && (
           <div className="space-y-6">
             <div className="text-center">
@@ -233,7 +231,7 @@ export const IdentifikasiWizard: React.FC<Props> = ({
           </div>
         )}
 
-        {/* STEP 3: UKURAN */}
+        {/* UKURAN */}
         {currentStep === 3 && (
           <div className="space-y-6">
             <div className="text-center">
@@ -272,7 +270,7 @@ export const IdentifikasiWizard: React.FC<Props> = ({
           </div>
         )}
 
-        {/* STEP 4: ROSTRUM */}
+        {/* ROSTRUM */}
         {currentStep === 4 && (
           <div className="space-y-6">
             <div className="text-center">

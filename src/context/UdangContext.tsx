@@ -8,7 +8,7 @@ import React, {
 import { JenisUdang, HistoryItem } from "../types/udang.types";
 import { udangService } from "../services/udangService";
 
-// 1. DEFINE TYPE (bentuk data yang akan disimpan)
+// DEFINE TYPE (bentuk data yang akan disimpan)
 interface UdangContextType {
   // State
   history: HistoryItem[];
@@ -23,10 +23,10 @@ interface UdangContextType {
   clearError: () => void;
 }
 
-// 2. CREATE CONTEXT (dengan nilai default null)
+// CREATE CONTEXT (dengan nilai default null)
 const UdangContext = createContext<UdangContextType | null>(null);
 
-// 3. CREATE PROVIDER COMPONENT (membungkus aplikasi)
+// CREATE PROVIDER COMPONENT (membungkus aplikasi)
 interface UdangProviderProps {
   children: ReactNode;
 }
@@ -93,7 +93,7 @@ export const UdangProvider: React.FC<UdangProviderProps> = ({ children }) => {
   );
 };
 
-// 4. CREATE CUSTOM HOOK (mudah digunakan di komponen mana pun)
+// CREATE CUSTOM HOOK (mudah digunakan di komponen mana pun)
 export const useUdangContext = () => {
   const context = useContext(UdangContext);
   if (!context) {

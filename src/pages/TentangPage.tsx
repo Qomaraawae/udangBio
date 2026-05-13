@@ -112,7 +112,7 @@ export const TentangPage: React.FC = () => {
 
           <hr className="border-gray-200" />
 
-          {/* ── Latar Belakang ── */}
+          {/* Latar Belakang */}
           <SectionCard
             icon={<Fish className="w-4 h-4 text-blue-600" />}
             iconBg="bg-blue-50 border border-blue-100"
@@ -128,7 +128,7 @@ export const TentangPage: React.FC = () => {
             </p>
           </SectionCard>
 
-          {/* ── Cara Kerja ── */}
+          {/* Cara Kerja */}
           <SectionCard
             icon={<Brain className="w-4 h-4 text-violet-600" />}
             iconBg="bg-violet-50 border border-violet-100"
@@ -151,7 +151,7 @@ export const TentangPage: React.FC = () => {
             </p>
           </SectionCard>
 
-          {/* ── Jenis Udang ── */}
+          {/* Jenis Udang */}
           <SectionCard
             icon={<Database className="w-4 h-4 text-cyan-600" />}
             iconBg="bg-cyan-50 border border-cyan-100"
@@ -188,7 +188,7 @@ export const TentangPage: React.FC = () => {
             </div>
           </SectionCard>
 
-          {/* ── Teknologi ── */}
+          {/* Teknologi */}
           <SectionCard
             icon={<Code className="w-4 h-4 text-emerald-600" />}
             iconBg="bg-emerald-50 border border-emerald-100"
@@ -207,7 +207,7 @@ export const TentangPage: React.FC = () => {
             </div>
           </SectionCard>
 
-          {/* ── Footer note ── */}
+          {/* Footer note */}
           <div className="flex items-center gap-2 justify-center text-gray-400 text-xs pb-4">
             <Layers className="w-3 h-3" />
             <span>Dikembangkan sebagai proyek sistem pakar akademik</span>

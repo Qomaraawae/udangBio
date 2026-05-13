@@ -44,7 +44,7 @@ export const HistoryPage: React.FC = () => {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [sortBy, setSortBy] = useState<SortType>("terbaru");
 
-  // Fungsi sorting history
+  // Sorting History
   const sortedHistory = useMemo(() => {
     const data = [...history];
 
@@ -142,7 +142,7 @@ export const HistoryPage: React.FC = () => {
     return "text-red-600 bg-red-50 border-red-200";
   };
 
-  // Hitung statistik
+  // Hitung Statistik
   const totalDeteksi = history.length;
   const rataRataConfidence =
     history.length > 0
